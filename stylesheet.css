@@ -133,3 +133,19 @@ span.highlight {
 em {
   background-image: linear-gradient(-180deg, #ffffaa 0%, #ffdd77 100%);
 }
+
+
+.circular-frame {
+  border-radius: 50%;
+  overflow: hidden;
+  width: 160px;
+  height: 160px;
+  border: 2px solid #fff; /* Optional: Add a border around the circular frame */
+  display: block;
+} 
+
+.hoverZoomLink { 
+  width: 100%; 
+  height: 100%;
+  display: block;
+} 
