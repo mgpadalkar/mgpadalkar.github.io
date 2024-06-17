@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Sheets Charts</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <style>
+        .chart-container {
+            width: 90%; /* Adjust width to fit better within the page */
+            height: 450px;
+            margin: 20px auto; /* Center align and space out the charts */
+            padding: 50px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .chart-container h2 {
+            font-size: 18px;
+            margin: 0 0 10px 0;
+            text-align: center;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .response-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Charts from Google Sheets</h1>
+
+    <div class="response-section">
+        <h2>Number of Responses</h2>
+        <p id="responseCount"></p>
+    </div>
+
+    <div id="chartsContainer"></div>
+
+    <script>
+        // Your Google Spreadsheet ID
+        const spreadsheetId = '17c7_UNC2QgLCaqCD3-pmIW5GMVqTX__J7yiRlTZ1f3o';
+        const range = 'Form Responses 1'; // Specify the sheet name
+
+        // Your Google API Key
+        const apiKey = 'AIzaSyD1BzLD1l55zIdFRwBnU6VeEYf6KaO4Yds';
+
+        // Function to fetch data from Google Sheets
+        async function fetchData() {
+            try {
+                const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
+                const response = await fetch(url);
+                if (!response.ok) {
+                    const errorResponse = await response.json();
+                    throw new Error(`Error fetching data: ${errorResponse.error.message}`);
+                }
+                const data = await response.json();
+                if (!data || !data.values) {
+                    throw new Error('No data found in the response');
+                }
+                return data.values;
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                return [];
+            }
+        }
+
+
+	/*
+        // Function to create chart
+        function createChart(sectionName, labels, values, canvasId, chartType = 'pie') {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: sectionName,
+                        data: values,
+                        backgroundColor: chartType === 'pie' ? [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)',
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)'
+                        ] : 'rgba(75, 192, 192, 0.2)',
+                        borderColor: chartType === 'pie' ? [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ] : 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 10
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    if (chartType === 'bar') {
+                                        return `${context.label}: ${context.raw}`;
+                                    } else {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed;
+                                        }
+                                        if (context.dataset) {
+                                            const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                            const currentValue = context.parsed;
+                                            const percentage = parseFloat(((currentValue / total) * 100).toFixed(1));
+                                            label += `(${percentage}%)`;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        */
+        
+
+        // Function to create chart
+        function createChart(sectionName, labels, values, canvasId, chartType = 'pie') {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            const config = {
+                type: chartType,
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: sectionName,
+                        data: values,
+                        backgroundColor: chartType === 'pie' ? [
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)',
+                            'rgba(255, 99, 132, 0.2)',
+                            'rgba(54, 162, 235, 0.2)',
+                            'rgba(255, 206, 86, 0.2)',
+                            'rgba(75, 192, 192, 0.2)',
+                            'rgba(153, 102, 255, 0.2)',
+                            'rgba(255, 159, 64, 0.2)'
+                        ] : 'rgba(75, 192, 192, 0.2)',
+                        borderColor: chartType === 'pie' ? [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)',
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ] : 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                        label: function (context) {
+                                            if (chartType === 'bar') {
+                                                return `${context.label}: ${context.raw}`;
+                                            } else {
+                                                let label = '';
+                                                if (context.parsed !== null) {
+                                                    label += context.parsed;
+                                                }
+                                                if (context.dataset) {
+                                                    const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                                    const currentValue = context.parsed;
+                                                    const percentage = parseFloat(((currentValue / total) * 100).toFixed(1));
+                                                    label += ` (${percentage}%)`;
+                                                }
+                                                return label;
+                                            }
+                                        }
+                                    }
+                        },
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                boxWidth: 10
+                            }
+                        },
+                        datalabels: {
+                            color: '#000',
+                            font: {
+                                weight: 'bold'
+                            },
+                            formatter: function(value, ctx) {
+                                const dataset = ctx.chart.data.datasets[0];
+                                const total = dataset.data.reduce((acc, val) => acc + val, 0);
+                                const percentage = parseFloat(((value / total) * 100).toFixed(1));
+                                return `${value} (${percentage}%)`;
+                            },
+                            anchor: 'end', // Position of the label relative to the anchor point
+                            align: 'start' // Alignment of text relative to the anchor point
+                        }
+                    }
+                }
+            };
+        
+            // Ensure datalabels plugin is loaded and applied
+            Chart.register(ChartDataLabels);
+        
+            new Chart(ctx, config);
+        }
+
+
+
+        // Fetch data and create charts
+        fetchData().then(data => {
+            if (!data || data.length === 0) {
+                console.error('No data available.');
+                return;
+            }
+
+            const headers = data[0]; // Assuming the first row contains headers
+            const rows = data.slice(1); // Skip header row
+
+            // Count the number of timestamps (responses)
+            const responseCount = rows.length;
+
+            // Display the response count
+            document.getElementById('responseCount').textContent = responseCount;
+
+            // Process data for histogram
+            const dateCounts = rows.reduce((acc, row) => {
+                const dateTime = row[0]; // First column contains timestamps
+                const date = dateTime.split(' ')[0]; // Extract the date part (DD/MM/YYYY)
+                if (date) {
+                    if (acc[date]) {
+                        acc[date] += 1;
+                    } else {
+                        acc[date] = 1;
+                    }
+                }
+                return acc;
+            }, {});
+
+            console.log('Date counts:', dateCounts);
+
+            // Process date data into labels and values for histogram
+            const dateLabels = Object.keys(dateCounts);
+            const dateValues = Object.values(dateCounts);
+
+            // Create a canvas element for the date histogram
+            const dateCanvasId = 'dateHistogram';
+            const dateSection = document.createElement('section');
+            dateSection.classList.add('chart-container');
+            dateSection.innerHTML = `<h2>Date of Entry Histogram</h2><canvas id="${dateCanvasId}"></canvas>`;
+            document.getElementById('chartsContainer').appendChild(dateSection);
+
+            // Create date histogram chart
+            createChart('Date of Entry', dateLabels, dateValues, dateCanvasId, 'bar');
+
+            // Iterate over each column (excluding the first one, which contains timestamps)
+            headers.forEach((header, colIndex) => {
+                if (colIndex === 0) return; // Skip the first column (timestamps)
+
+                // Aggregate data based on unique values in the current column
+                const aggregatedData = rows.reduce((acc, row) => {
+                    const value = row[colIndex]; // Values from the current column
+                    if (value) {
+                        if (acc[value]) {
+                            acc[value] += 1;
+                        } else {
+                            acc[value] = 1;
+                        }
+                    }
+                    return acc;
+                }, {});
+
+                // Process data into labels and values
+                const labels = Object.keys(aggregatedData);
+                const values = Object.values(aggregatedData);
+
+                console.log(`Data for column ${header}:`, aggregatedData);
+
+                // Create a canvas element for the chart
+                const canvasId = `chart${colIndex}`;
+                const section = document.createElement('section');
+                section.classList.add('chart-container');
+                section.innerHTML = `<h2>${header}</h2><canvas id="${canvasId}"></canvas>`;
+                document.getElementById('chartsContainer').appendChild(section);
+
+                // Create chart
+                createChart(header, labels, values, canvasId);
+            });
+        });
+    </script>
+
+</body>
+</html>
+
