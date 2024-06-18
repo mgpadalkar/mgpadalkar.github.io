@@ -13,6 +13,7 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            float: left; /* Float the elements to make them display in a row */
         }
         .chart-container h2 {
             font-size: 18px;
@@ -34,11 +35,10 @@
     <h1>Charts from Google Sheets</h1>
 
     <div class="response-section">
-        <h2>Number of Responses</h2>
-        <p id="responseCount"></p>
+        <h2>Number of Responses <span id="responseCount"></span></h2>
     </div>
 
-    <div id="chartsContainer"></div>
+    <div id="chartsContainer" class="chart-row"></div>
 
     <script>
         // Your Google Spreadsheet ID
@@ -68,89 +68,31 @@
             }
         }
 
-
-	/*
-        // Function to create chart
-        function createChart(sectionName, labels, values, canvasId, chartType = 'pie') {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            new Chart(ctx, {
-                type: chartType,
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: sectionName,
-                        data: values,
-                        backgroundColor: chartType === 'pie' ? [
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(255, 206, 86, 0.2)',
-                            'rgba(75, 192, 192, 0.2)',
-                            'rgba(153, 102, 255, 0.2)',
-                            'rgba(255, 159, 64, 0.2)',
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(255, 206, 86, 0.2)',
-                            'rgba(75, 192, 192, 0.2)',
-                            'rgba(153, 102, 255, 0.2)',
-                            'rgba(255, 159, 64, 0.2)'
-                        ] : 'rgba(75, 192, 192, 0.2)',
-                        borderColor: chartType === 'pie' ? [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                            'rgba(255, 159, 64, 1)',
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                            'rgba(255, 159, 64, 1)'
-                        ] : 'rgba(75, 192, 192, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'right',
-                            labels: {
-                                boxWidth: 10
-                            }
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    if (chartType === 'bar') {
-                                        return `${context.label}: ${context.raw}`;
-                                    } else {
-                                        let label = context.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed !== null) {
-                                            label += context.parsed;
-                                        }
-                                        if (context.dataset) {
-                                            const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
-                                            const currentValue = context.parsed;
-                                            const percentage = parseFloat(((currentValue / total) * 100).toFixed(1));
-                                            label += `(${percentage}%)`;
-                                        }
-                                        return label;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        */
-        
+        // Define an array of colors for the bar charts
+        const barColors = [
+            'rgba(255, 99, 132, 0.2)',
+            'rgba(54, 162, 235, 0.2)',
+            'rgba(255, 206, 86, 0.2)',
+            'rgba(75, 192, 192, 0.2)',
+            'rgba(153, 102, 255, 0.2)',
+            'rgba(255, 159, 64, 0.2)',
+            'rgba(199, 199, 199, 0.2)',
+            'rgba(83, 102, 255, 0.2)',
+            'rgba(255, 255, 102, 0.2)',
+            'rgba(175, 192, 192, 0.2)'
+        ];
+        const borderColors = [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(153, 102, 255, 1)',
+            'rgba(255, 159, 64, 1)',
+            'rgba(199, 199, 199, 1)',
+            'rgba(83, 102, 255, 1)',
+            'rgba(255, 255, 102, 1)',
+            'rgba(175, 192, 192, 1)'
+        ];
 
         // Function to create chart
         function createChart(sectionName, labels, values, canvasId, chartType = 'pie') {
@@ -162,7 +104,7 @@
                     datasets: [{
                         label: sectionName,
                         data: values,
-                        backgroundColor: chartType === 'pie' ? [
+                        backgroundColor: chartType === 'bar' ? barColors.slice(0, labels.length) : [
                             'rgba(255, 99, 132, 0.2)',
                             'rgba(54, 162, 235, 0.2)',
                             'rgba(255, 206, 86, 0.2)',
@@ -175,8 +117,8 @@
                             'rgba(75, 192, 192, 0.2)',
                             'rgba(153, 102, 255, 0.2)',
                             'rgba(255, 159, 64, 0.2)'
-                        ] : 'rgba(75, 192, 192, 0.2)',
-                        borderColor: chartType === 'pie' ? [
+                        ],
+                        borderColor: chartType === 'bar' ? borderColors.slice(0, labels.length) : [
                             'rgba(255, 99, 132, 1)',
                             'rgba(54, 162, 235, 1)',
                             'rgba(255, 206, 86, 1)',
@@ -189,7 +131,7 @@
                             'rgba(75, 192, 192, 1)',
                             'rgba(153, 102, 255, 1)',
                             'rgba(255, 159, 64, 1)'
-                        ] : 'rgba(75, 192, 192, 1)',
+                        ],
                         borderWidth: 1
                     }]
                 },
@@ -199,29 +141,30 @@
                     plugins: {
                         tooltip: {
                             callbacks: {
-                                        label: function (context) {
-                                            if (chartType === 'bar') {
-                                                return `${context.label}: ${context.raw}`;
-                                            } else {
-                                                let label = '';
-                                                if (context.parsed !== null) {
-                                                    label += context.parsed;
-                                                }
-                                                if (context.dataset) {
-                                                    const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
-                                                    const currentValue = context.parsed;
-                                                    const percentage = parseFloat(((currentValue / total) * 100).toFixed(1));
-                                                    label += ` (${percentage}%)`;
-                                                }
-                                                return label;
-                                            }
+                                label: function (context) {
+                                    if (chartType === 'bar') {
+                                        return `${context.label}: ${context.raw}`;
+                                    } else {
+                                        let label = '';
+                                        if (context.parsed !== null) {
+                                            label += context.parsed;
                                         }
+                                        if (context.dataset) {
+                                            const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
+                                            const currentValue = context.parsed;
+                                            const percentage = parseFloat(((currentValue / total) * 100).toFixed(1));
+                                            label += ` (${percentage}%)`;
+                                        }
+                                        return label;
                                     }
+                                }
+                            }
                         },
                         legend: {
+                            display: chartType !== 'bar', // Display legends for non-bar charts only
                             position: 'right',
                             labels: {
-                                boxWidth: 10
+                                boxWidth: 10,
                             }
                         },
                         datalabels: {
@@ -241,14 +184,12 @@
                     }
                 }
             };
-        
+
             // Ensure datalabels plugin is loaded and applied
             Chart.register(ChartDataLabels);
-        
+
             new Chart(ctx, config);
         }
-
-
 
         // Fetch data and create charts
         fetchData().then(data => {
@@ -264,7 +205,7 @@
             const responseCount = rows.length;
 
             // Display the response count
-            document.getElementById('responseCount').textContent = responseCount;
+            document.getElementById('responseCount').textContent = `= ${responseCount}`;
 
             // Process data for histogram
             const dateCounts = rows.reduce((acc, row) => {
@@ -329,6 +270,51 @@
                 // Create chart
                 createChart(header, labels, values, canvasId);
             });
+            
+            // Identify unique elements in columns 3-11 (excluding the first row)
+            const uniqueElements = new Set();
+            for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+                for (let colIndex = 2; colIndex < 11; colIndex++) {
+                    const value = rows[rowIndex][colIndex];
+                    if (value) {
+                        uniqueElements.add(value);
+                    }
+                }
+            }
+
+            // Convert the Set to an array and sort it
+            const sortedUniqueElements = Array.from(uniqueElements).sort();
+            console.log('Unique elements in columns 3-11 (sorted):', sortedUniqueElements);
+
+            // Create sub-histograms for each unique element
+            sortedUniqueElements.forEach(uniqueElement => {
+                const subHistogramData = Array(headers.length - 2).fill(0); // Initialize data array for sub-histogram
+                for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+                    for (let colIndex = 2; colIndex < 11; colIndex++) {
+                        if (rows[rowIndex][colIndex] === uniqueElement) {
+                            subHistogramData[colIndex - 2] += 1; // Increment the count for this column
+                        }
+                    }
+                }
+
+                // Create a canvas element for the sub-histogram
+                const canvasId = `subHistogram_${uniqueElement.replace(/\s+/g, '_')}`;
+                const section = document.createElement('section');
+                section.classList.add('chart-container');
+                section.innerHTML = `<h2>${uniqueElement}</h2><canvas id="${canvasId}"></canvas>`;
+                document.getElementById('chartsContainer').appendChild(section);
+
+                // Extract contents within [] from headers.slice(2, 11)
+                const xLabels_3_to_11 = headers.slice(2, 11).map(header => {
+                    const startIndex = header.indexOf('[') + 1;
+                    const endIndex = header.indexOf(']');
+                    return header.substring(startIndex, endIndex);
+                });
+
+                // Create sub-histogram chart
+                createChart(uniqueElement, xLabels_3_to_11, subHistogramData, canvasId, 'pie');
+            });
+
         });
     </script>
 
