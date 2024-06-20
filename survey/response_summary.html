@@ -1,323 +1,422 @@
 <!DOCTYPE html>
-<html>
-<head>
-    <title>Google Sheets Charts</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <style>
-        .chart-container {
-            width: 90%; /* Adjust width to fit better within the page */
-            height: 450px;
-            margin: 20px auto; /* Center align and space out the charts */
-            padding: 50px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            float: left; /* Float the elements to make them display in a row */
-        }
-        .chart-container h2 {
-            font-size: 18px;
-            margin: 0 0 10px 0;
-            text-align: center;
-        }
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .response-section {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-    <h1>Charts from Google Sheets</h1>
-
-    <div class="response-section">
-        <h2>Number of Responses <span id="responseCount"></span></h2>
-    </div>
-
-    <div id="chartsContainer" class="chart-row"></div>
-
-    <script>
-        // Your Google Spreadsheet ID
-        const spreadsheetId = '17c7_UNC2QgLCaqCD3-pmIW5GMVqTX__J7yiRlTZ1f3o';
-        const range = 'Form Responses 1'; // Specify the sheet name
-
-        // Your Google API Key
-        const apiKey = 'AIzaSyD1BzLD1l55zIdFRwBnU6VeEYf6KaO4Yds';
-
-        // Function to fetch data from Google Sheets
-        async function fetchData() {
-            try {
-                const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
-                const response = await fetch(url);
-                if (!response.ok) {
-                    const errorResponse = await response.json();
-                    throw new Error(`Error fetching data: ${errorResponse.error.message}`);
-                }
-                const data = await response.json();
-                if (!data || !data.values) {
-                    throw new Error('No data found in the response');
-                }
-                return data.values;
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                return [];
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Frequency Plots for Section 1 and Section 2</title>
+        <!-- Chart.js CDN -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+        <!-- Bootstrap CDN for styling -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <style>
+            .section-container {
+                margin-bottom: 20px;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+                padding: 50px;
             }
-        }
+            .container-top { /* contains section title and common legend */
+            }
+            .top-title { /* the title */
+                font-size: 20px;
+                font-weight: bold;
+                margin: 0 0 10px 0;
+                text-align: center;
+            }
+            .top-legend {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+            .top-legend ul {
+                list-style: none;
+                padding: 0;
+            }
+            .top-legend li {
+                display: inline-block;
+                margin-right: 10px;
+                cursor: pointer;
+                font-size: 10px;
+            }
+            .top-legend span {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                margin-right: 5px;
+            }
+            .section-bottom { /* contains the plots */
+                height: 300px;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-evenly;
+            }
+            .bottom-plot {
+                padding: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="main-container" width="400" height="400"></div>
+        <script>
 
-        // Define an array of colors for the bar charts
-        const barColors = [
-            'rgba(255, 99, 132, 0.2)',
-            'rgba(54, 162, 235, 0.2)',
-            'rgba(255, 206, 86, 0.2)',
-            'rgba(75, 192, 192, 0.2)',
-            'rgba(153, 102, 255, 0.2)',
-            'rgba(255, 159, 64, 0.2)',
-            'rgba(199, 199, 199, 0.2)',
-            'rgba(83, 102, 255, 0.2)',
-            'rgba(255, 255, 102, 0.2)',
-            'rgba(175, 192, 192, 0.2)'
-        ];
-        const borderColors = [
-            'rgba(255, 99, 132, 1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(255, 206, 86, 1)',
-            'rgba(75, 192, 192, 1)',
-            'rgba(153, 102, 255, 1)',
-            'rgba(255, 159, 64, 1)',
-            'rgba(199, 199, 199, 1)',
-            'rgba(83, 102, 255, 1)',
-            'rgba(255, 255, 102, 1)',
-            'rgba(175, 192, 192, 1)'
-        ];
+            // Your Google Spreadsheet ID
+            const spreadsheetId = '17c7_UNC2QgLCaqCD3-pmIW5GMVqTX__J7yiRlTZ1f3o';
+            const range = 'Form Responses 1'; // Specify the sheet name
 
-        // Function to create chart
-        function createChart(sectionName, labels, values, canvasId, chartType = 'pie') {
-            const ctx = document.getElementById(canvasId).getContext('2d');
-            const config = {
+            // Your Google API Key
+            const apiKey = 'AIzaSyD1BzLD1l55zIdFRwBnU6VeEYf6KaO4Yds';
+
+            // Function to fetch data from Google Sheets
+            async function fetchData() {
+                try {
+                    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
+                    const response = await fetch(url);
+                    if (!response.ok) {
+                        const errorResponse = await response.json();
+                        throw new Error(`Error fetching data: ${errorResponse.error.message}`);
+                    }
+                    const data = await response.json();
+                    if (!data || !data.values) {
+                        throw new Error('No data found in the response');
+                    }
+                    return data.values;
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    return [];
+                }
+            }
+
+            const myBackgroundColor = [
+              'rgba(255, 99, 132, 0.5)',
+              'rgba(54, 162, 235, 0.5)',
+              'rgba(255, 206, 86, 0.5)',
+              'rgba(75, 192, 192, 0.5)',
+              'rgba(153, 102, 255, 0.5)',
+              'rgba(255, 159, 64, 0.5)',
+              'rgba(255, 99, 132, 0.5)',
+              'rgba(54, 162, 235, 0.5)',
+              'rgba(255, 206, 86, 0.5)',
+              'rgba(75, 192, 192, 0.5)',
+              'rgba(153, 102, 255, 0.5)',
+              'rgba(255, 159, 64, 0.5)', 
+            ];
+
+            const myBorderColor = [
+             'rgba(255, 99, 132, 1)',
+             'rgba(54, 162, 235, 1)',
+             'rgba(255, 206, 86, 1)',
+             'rgba(75, 192, 192, 1)',
+             'rgba(153, 102, 255, 1)',
+             'rgba(255, 159, 64, 1)',
+             'rgba(255, 99, 132, 1)',
+             'rgba(54, 162, 235, 1)',
+             'rgba(255, 206, 86, 1)',
+             'rgba(75, 192, 192, 1)',
+             'rgba(153, 102, 255, 1)',
+             'rgba(255, 159, 64, 1)', 
+            ];
+
+            function getFormattedPair(value, dataset) {
+              if (value !== undefined) {
+                let total = dataset.data.reduce((acc, val) =>acc + val, 0);
+                let percentage = parseFloat(((value/total)*100).toFixed(1));
+                return `${value}\n(${percentage}%)`
+              } else { 
+                return '0\n(0%)';
+              }
+            }
+
+            // Function to plot a bar chart
+            function plotChartCanvas(ctx, xLabels, yValues, chartTitle, chartType='bar') {
+              // create the config
+              config = {
                 type: chartType,
                 data: {
-                    labels: labels,
-                    datasets: [{
-                        label: sectionName,
-                        data: values,
-                        backgroundColor: chartType === 'bar' ? barColors.slice(0, labels.length) : [
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(255, 206, 86, 0.2)',
-                            'rgba(75, 192, 192, 0.2)',
-                            'rgba(153, 102, 255, 0.2)',
-                            'rgba(255, 159, 64, 0.2)',
-                            'rgba(255, 99, 132, 0.2)',
-                            'rgba(54, 162, 235, 0.2)',
-                            'rgba(255, 206, 86, 0.2)',
-                            'rgba(75, 192, 192, 0.2)',
-                            'rgba(153, 102, 255, 0.2)',
-                            'rgba(255, 159, 64, 0.2)'
-                        ],
-                        borderColor: chartType === 'bar' ? borderColors.slice(0, labels.length) : [
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                            'rgba(255, 159, 64, 1)',
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)',
-                            'rgba(153, 102, 255, 1)',
-                            'rgba(255, 159, 64, 1)'
-                        ],
-                        borderWidth: 1
-                    }]
+                  labels: xLabels,
+                  datasets: [{
+                    label: chartTitle,
+                    data: yValues,
+                    backgroundColor: myBackgroundColor,
+                    borderColor: myBorderColor, 
+                    borderWidth: 1
+                  }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    if (chartType === 'bar') {
-                                        return `${context.label}: ${context.raw}`;
-                                    } else {
-                                        let label = '';
-                                        if (context.parsed !== null) {
-                                            label += context.parsed;
-                                        }
-                                        if (context.dataset) {
-                                            const total = context.dataset.data.reduce((acc, val) => acc + val, 0);
-                                            const currentValue = context.parsed;
-                                            const percentage = parseFloat(((currentValue / total) * 100).toFixed(1));
-                                            label += ` (${percentage}%)`;
-                                        }
-                                        return label;
-                                    }
-                                }
-                            }
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: {
+                      display: false,
+                      position: 'top',
+                      labels: {
+                        boxWidth: 10,
+                      },
+                    },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context){
+                            return getFormattedPair(context.raw, context.dataset);
                         },
-                        legend: {
-                            display: chartType !== 'bar', // Display legends for non-bar charts only
-                            position: 'right',
-                            labels: {
-                                boxWidth: 10,
-                            }
-                        },
-                        datalabels: {
-                            color: '#000',
-                            font: {
-                                weight: 'bold'
-                            },
-                            formatter: function(value, ctx) {
-                                const dataset = ctx.chart.data.datasets[0];
-                                const total = dataset.data.reduce((acc, val) => acc + val, 0);
-                                const percentage = parseFloat(((value / total) * 100).toFixed(1));
-                                return `${value} (${percentage}%)`;
-                            },
-                            anchor: 'end', // Position of the label relative to the anchor point
-                            align: 'start' // Alignment of text relative to the anchor point
-                        }
-                    }
+                      },
+                    },
+                    title: {
+                      display: true,
+                      text: chartTitle,
+                      font: {
+                        size: 16,
+                        weight: 'bold',
+                      },
+                    },
+                    datalabels: {
+                      color: '#000',
+                      anchor: 'end',
+                      align: 'start',
+                      formatter: function(value, context) {
+                        return getFormattedPair(value, context.chart.data.datasets[0]);
+                      },
+                      font: {
+                        size: 8,
+                      },
+                    },
+                  },
+                  // scales: {
+                  //   x: {
+                  //     ticks: {
+                  //       display: false,
+                  //     },
+                  //     grid: {
+                  //       display: false,
+                  //     },
+                  //   },
+                  // },
                 }
-            };
+              };
 
-            // Ensure datalabels plugin is loaded and applied
-            Chart.register(ChartDataLabels);
-
-            new Chart(ctx, config);
-        }
-
-        // Fetch data and create charts
-        fetchData().then(data => {
-            if (!data || data.length === 0) {
-                console.error('No data available.');
-                return;
+              // Ensure datalabels plugin is loaded and applied
+              Chart.register(ChartDataLabels);
+              new Chart(ctx, config);
             }
 
-            const headers = data[0]; // Assuming the first row contains headers
-            const rows = data.slice(1); // Skip header row
-
-            // Count the number of timestamps (responses)
-            const responseCount = rows.length;
-
-            // Display the response count
-            document.getElementById('responseCount').textContent = `= ${responseCount}`;
-
-            // Process data for histogram
-            const dateCounts = rows.reduce((acc, row) => {
-                const dateTime = row[0]; // First column contains timestamps
-                const date = dateTime.split(' ')[0]; // Extract the date part (DD/MM/YYYY)
-                if (date) {
-                    if (acc[date]) {
-                        acc[date] += 1;
+            // transform the data into list of column frequency dictionaries
+            function columnValueFrequencies(data) {
+              let numColumns = data[0].length;
+              let frequencyList = [];
+              for (let col=0; col < numColumns; col++) {
+                frequencyList.push({});
+              }
+              for (let row of data) {
+                for (let col = 0; col < numColumns; col++) {
+                  let val = row[col];
+                  if (val !== undefined && val !== null && val !== "")
+                  {
+                    if (col === 0) { // for timestamp column
+                        val = val.split(' ')[0];
+                    }
+                    if (frequencyList[col][val]) {
+                      frequencyList[col][val] += 1;
                     } else {
-                        acc[date] = 1;
+                      frequencyList[col][val] = 1;
                     }
+                  }
                 }
-                return acc;
-            }, {});
-
-            console.log('Date counts:', dateCounts);
-
-            // Process date data into labels and values for histogram
-            const dateLabels = Object.keys(dateCounts);
-            const dateValues = Object.values(dateCounts);
-
-            // Create a canvas element for the date histogram
-            const dateCanvasId = 'dateHistogram';
-            const dateSection = document.createElement('section');
-            dateSection.classList.add('chart-container');
-            dateSection.innerHTML = `<h2>Date of Entry Histogram</h2><canvas id="${dateCanvasId}"></canvas>`;
-            document.getElementById('chartsContainer').appendChild(dateSection);
-
-            // Create date histogram chart
-            createChart('Date of Entry', dateLabels, dateValues, dateCanvasId, 'bar');
-
-            // Iterate over each column (excluding the first one, which contains timestamps)
-            headers.forEach((header, colIndex) => {
-                if (colIndex === 0) return; // Skip the first column (timestamps)
-
-                // Aggregate data based on unique values in the current column
-                const aggregatedData = rows.reduce((acc, row) => {
-                    const value = row[colIndex]; // Values from the current column
-                    if (value) {
-                        if (acc[value]) {
-                            acc[value] += 1;
-                        } else {
-                            acc[value] = 1;
-                        }
-                    }
-                    return acc;
-                }, {});
-
-                // Process data into labels and values
-                const labels = Object.keys(aggregatedData);
-                const values = Object.values(aggregatedData);
-
-                console.log(`Data for column ${header}:`, aggregatedData);
-
-                // Create a canvas element for the chart
-                const canvasId = `chart${colIndex}`;
-                const section = document.createElement('section');
-                section.classList.add('chart-container');
-                section.innerHTML = `<h2>${header}</h2><canvas id="${canvasId}"></canvas>`;
-                document.getElementById('chartsContainer').appendChild(section);
-
-                // Create chart
-                createChart(header, labels, values, canvasId);
-            });
-            
-            // Identify unique elements in columns 3-11 (excluding the first row)
-            const uniqueElements = new Set();
-            for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-                for (let colIndex = 2; colIndex < 11; colIndex++) {
-                    const value = rows[rowIndex][colIndex];
-                    if (value) {
-                        uniqueElements.add(value);
-                    }
-                }
+              }
+              return frequencyList;
             }
 
-            // Convert the Set to an array and sort it
-            const sortedUniqueElements = Array.from(uniqueElements).sort();
-            console.log('Unique elements in columns 3-11 (sorted):', sortedUniqueElements);
-
-            // Create sub-histograms for each unique element
-            sortedUniqueElements.forEach(uniqueElement => {
-                const subHistogramData = Array(headers.length - 2).fill(0); // Initialize data array for sub-histogram
-                for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
-                    for (let colIndex = 2; colIndex < 11; colIndex++) {
-                        if (rows[rowIndex][colIndex] === uniqueElement) {
-                            subHistogramData[colIndex - 2] += 1; // Increment the count for this column
-                        }
-                    }
+            /*
+            // make a shared dataset for plotting
+            function makeSharedDataset(commonLabelsArray, dataArrayList, dataNameList) {
+                datasetDictList = [];
+                for (let i=0; i < dataArrayList.length; i++)
+                {
+                  let datasetDict = {
+                    label: dataNameList[i],
+                    data: dataArrayList[i],
+                    backgroundColor: myBackgroundColor,
+                    borderColor: myBorderColor,
+                    borderWidth: 1,
+                  };
+                  datasetDictList.push(datasetDict);
                 }
+                let sharedData = {
+                  labels: commonLabelsArray,
+                  datasets: datasetDictList,
+                };
+                return sharedData;
+            }
 
-                // Create a canvas element for the sub-histogram
-                const canvasId = `subHistogram_${uniqueElement.replace(/\s+/g, '_')}`;
-                const section = document.createElement('section');
-                section.classList.add('chart-container');
-                section.innerHTML = `<h2>${uniqueElement}</h2><canvas id="${canvasId}"></canvas>`;
-                document.getElementById('chartsContainer').appendChild(section);
+            // function to make data dictionary for plotting
+            function makeDataDictForPlot(xLabels, yValues, datasetName) {
+              let datasetDict = {
+                labels: xLabels,
+                datasets: [{
+                  label: datasetName,
+                  data: yValues,
+                  backgroundColor: myBackgroundColor,
+                  borderColor: myBorderColor,
+                  borderWidth: 1,
+                }],
+              };
+              return datasetDict;
+            }
+            */
 
-                // Extract contents within [] from headers.slice(2, 11)
-                const xLabels_3_to_11 = headers.slice(2, 11).map(header => {
-                    const startIndex = header.indexOf('[') + 1;
-                    const endIndex = header.indexOf(']');
-                    return header.substring(startIndex, endIndex);
+            
+            function makeNewElement(elementType, className=null) {
+              const newElement = document.createElement(elementType);
+              if (className !== null) {
+                newElement.classList.add(className);
+              }
+              return newElement;
+            }
+
+            
+            function prepareCanvas(numPlots) {
+               const plot = makeNewElement('div', 'bottom-plot');
+               plot.style.flex = `1 0 ${100 / numPlots}%`;
+               plot.style.maxWidth = `${100 / numPlots}%`;
+               const canvas = makeNewElement('canvas');
+               plot.appendChild(canvas);
+               return plot;
+            }
+
+
+            // plot section
+            function newSectionPlot(sectionName, numResponses, xLabels, yValuesArr, datasetNameArr, chartType='pie') {
+              // make section container
+              const container = document.getElementById('main-container');
+              const sectionContainer = makeNewElement('div', 'section-container');
+              container.appendChild(sectionContainer);
+
+              // make top
+              const sectionTop = makeNewElement('div', 'container-top');
+              sectionContainer.appendChild(sectionTop);
+              const topTitle = makeNewElement('div', 'top-title');
+              // topTitle.textContent = `${sectionName} (${numResponses} responses)`;
+              topTitle.innerHTML = `${sectionName}<br>(${numResponses} responses)`;
+              sectionTop.appendChild(topTitle);
+
+              // make bottom
+              const sectionBottom = makeNewElement('div', 'section-bottom');
+              sectionContainer.appendChild(sectionBottom);
+
+              // loop over various values to make the plot
+              let numPlots = yValuesArr.length;
+              yValuesArr.forEach((yValues, index) => {
+                  const plot = prepareCanvas(numPlots);
+                  sectionBottom.appendChild(plot);
+                  const ctx = plot.children[0].getContext('2d');
+                  plotChartCanvas(ctx, xLabels, yValues, datasetNameArr[index], chartType);
+              });
+
+
+              // make common legend if needed
+              if (true) {
+                const topLegend = makeNewElement('div', 'top-legend');
+                sectionTop.appendChild(topLegend);
+                // Create the combined legend HTML from the shared data
+                var combinedLegendHTML = '<ul>';
+                xLabels.forEach(function(label, index) {
+                  var colorIndex = index % myBackgroundColor.length;
+                  combinedLegendHTML += `
+                    <li>
+                      <span style="background-color: ${myBackgroundColor[colorIndex]}; border: 1px solid ${myBorderColor[colorIndex]}"></span>${label}
+                    <\li>
+                  `;
                 });
+                combinedLegendHTML += '</ul>';
+                topLegend.innerHTML = combinedLegendHTML;
+              }
 
-                // Create sub-histogram chart
-                createChart(uniqueElement, xLabels_3_to_11, subHistogramData, canvasId, 'pie');
+            }
+
+
+            function getUniqueHeads(dictionaryArr) {
+              uniqueHeads = new Set();
+              dictionaryArr.forEach(dict => {
+                Object.keys(dict).forEach(val => {
+                  uniqueHeads.add(val);
+                });
+              });
+              uniqueHeads = Array.from(uniqueHeads).sort();
+              // console.log('Heads', uniqueHeads);
+              return uniqueHeads;
+            }
+
+
+            function makeInsideOut(heads, dictionaryArr) {
+              let headData = [];
+              uniqueHeads.forEach(val => {
+                let outRow = []
+                dictionaryArr.forEach(dict => {
+                  if (dict[val]) {
+                    outRow.push(dict[val]);
+                  } else {
+                    outRow.push(0);
+                  }
+                });
+                headData.push(outRow);
+              });
+              return headData;
+            }
+
+
+            // Fetch data and create charts
+            fetchData().then(tableData => {
+              if (!tableData || tableData.length === 0) {
+                  console.error('No data available');
+                  return;
+              }
+
+              const headers = tableData[0]; // header row
+              const frequencyDict = columnValueFrequencies(tableData.slice(1));
+              const numResponses  = Object.values(frequencyDict[0]).reduce((acc, curr) => acc + curr, 0); // sum of all values of the 1st dictionary
+              // console.log('main', frequencyDict);
+
+              // section 1
+              newSectionPlot(headers[0], numResponses, Object.keys(frequencyDict[0]), [Object.values(frequencyDict[0])], [headers[0]], 'line');
+
+              // section 2 (age)
+              newSectionPlot(headers[1], numResponses, Object.keys(frequencyDict[1]), [Object.values(frequencyDict[1])], [headers[1]], 'bar');
+
+              // section 3 (cols 3-11)
+              let freqTitle = headers[2].substring(0, headers[2].indexOf('['));
+              let uniqueHeads = getUniqueHeads(frequencyDict.slice(2, 11));
+              let freqKeys = headers.slice(2, 11).map(val => val.substring(val.indexOf('[') + 1, val.indexOf(']')));
+              let freqList  = makeInsideOut(uniqueHeads, frequencyDict.slice(2, 11));
+              newSectionPlot(freqTitle, numResponses, freqKeys, freqList, uniqueHeads, 'pie');
+
+              // section 4 (cols 12-20)
+              freqTitle = headers[11].substring(0, headers[11].indexOf('['));
+              uniqueHeads = getUniqueHeads(frequencyDict.slice(11, 20));
+              freqList  = makeInsideOut(uniqueHeads, frequencyDict.slice(11, 20));
+              newSectionPlot(freqTitle, numResponses, freqKeys, freqList, uniqueHeads, 'pie');
+
+              // section 5 (other reasons) ...list by frequency of occurance row 21
+              newSectionPlot(headers[20], numResponses, Object.keys(frequencyDict[20]), [Object.values(frequencyDict[20])], [headers[20]], 'pie');
+
+              // section 6 (how do you overcome the problems) // row 22
+              newSectionPlot(headers[21], numResponses, Object.keys(frequencyDict[21]), [Object.values(frequencyDict[21])], [headers[21]], 'pie'); // Need to split the combinations
+              
+              // section 7 (are you satisfied) // row 23
+              newSectionPlot(headers[22], numResponses, Object.keys(frequencyDict[22]), [Object.values(frequencyDict[22])], [headers[22]], 'pie'); 
+
+              // section 8 (desired solution) // row 24
+              newSectionPlot(headers[23], numResponses, Object.keys(frequencyDict[23]), [Object.values(frequencyDict[23])], [headers[23]], 'pie'); 
+              
+              // section 9 (cost) // row 25
+              newSectionPlot(headers[24], numResponses, Object.keys(frequencyDict[24]), [Object.values(frequencyDict[24])], [headers[24]], 'bar'); 
+
+              // section 10 (comments) // row 26 ... need to display the text
+              
+              // section 11 (available for feedback) // row 27
+              newSectionPlot(headers[26], numResponses, Object.keys(frequencyDict[26]), [Object.values(frequencyDict[26])], [headers[26]], 'bar'); 
+
             });
 
-        });
-    </script>
-
-</body>
+        </script>
+    </body>
 </html>
 
