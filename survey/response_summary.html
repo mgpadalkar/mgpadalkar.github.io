@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Frequency Plots for Section 1 and Section 2</title>
+        <title>Are you troubled by strong lights? (Survey summary)</title>
         <!-- Chart.js CDN -->
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
@@ -94,6 +94,18 @@
             }
 
             const myBackgroundColor = [
+              'rgba(255, 99, 132, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(255, 206, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(153, 102, 255, 0.2)',
+              'rgba(255, 159, 64, 0.2)',
+              'rgba(255, 99, 132, 0.2)',
+              'rgba(54, 162, 235, 0.2)',
+              'rgba(255, 206, 86, 0.2)',
+              'rgba(75, 192, 192, 0.2)',
+              'rgba(153, 102, 255, 0.2)',
+              'rgba(255, 159, 64, 0.2)', 			
               'rgba(255, 99, 132, 0.5)',
               'rgba(54, 162, 235, 0.5)',
               'rgba(255, 206, 86, 0.5)',
@@ -109,6 +121,18 @@
             ];
 
             const myBorderColor = [
+             'rgba(255, 99, 132, 1)',
+             'rgba(54, 162, 235, 1)',
+             'rgba(255, 206, 86, 1)',
+             'rgba(75, 192, 192, 1)',
+             'rgba(153, 102, 255, 1)',
+             'rgba(255, 159, 64, 1)',
+             'rgba(255, 99, 132, 1)',
+             'rgba(54, 162, 235, 1)',
+             'rgba(255, 206, 86, 1)',
+             'rgba(75, 192, 192, 1)',
+             'rgba(153, 102, 255, 1)',
+             'rgba(255, 159, 64, 1)', // end of first list			
              'rgba(255, 99, 132, 1)',
              'rgba(54, 162, 235, 1)',
              'rgba(255, 206, 86, 1)',
@@ -226,6 +250,10 @@
               });
               return output;
             }
+			
+			function sortDictForKeys(dict) {
+			  return Object.fromEntries(Object.entries(dict).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)));
+			}
 
             // transform the data into list of column frequency dictionaries
             function columnValueFrequencies(data) {
@@ -254,10 +282,10 @@
                   });
                 }
               }
-              // sort every dict for keys
-              for(let i = 0; i < frequencyList.length; i++) {
-                  frequencyList[i] = Object.fromEntries(Object.entries(frequencyList[i]).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)));
-              }
+              // // sort every dict for keys
+              // for(let i = 0; i < frequencyList.length; i++) {
+              //     frequencyList[i] = Object.fromEntries(Object.entries(frequencyList[i]).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)));
+              // }
               return frequencyList;
             }
 
@@ -467,7 +495,8 @@
               newSectionPlot(headers[0], numResponses, Object.keys(frequencyDict[0]), [Object.values(frequencyDict[0])], ["Date"], 'line');
 
               // section 2 (age)
-              newSectionPlot(headers[1], numResponses, Object.keys(frequencyDict[1]), [Object.values(frequencyDict[1])], [headers[1]], 'bar');
+			  let ageDict = sortDictForKeys(frequencyDict[1]);
+              newSectionPlot(headers[1], numResponses, Object.keys(ageDict), [Object.values(ageDict)], [headers[1]], 'bar');
 
               // section 3 (cols 3-11)
               let freqTitle = headers[2].substring(0, headers[2].indexOf('['));
@@ -484,7 +513,7 @@
 
               // section 5 (other reasons) ...list by frequency of occurance row 21
               // newSectionPlot(headers[20], numResponses, Object.keys(frequencyDict[20]), [Object.values(frequencyDict[20])], [headers[20]], 'pie');
-              newSectionText(headers[20], frequencyDict[20]);
+              newSectionText(headers[20], sortDictForKeys(frequencyDict[20]));
 
               // section 6 (how do you overcome the problems) // row 22
               newSectionPlot(headers[21], numResponses, Object.keys(frequencyDict[21]), [Object.values(frequencyDict[21])], [headers[21]], 'pie'); // Need to split the combinations
@@ -496,16 +525,18 @@
               newSectionPlot(headers[23], numResponses, Object.keys(frequencyDict[23]), [Object.values(frequencyDict[23])], [headers[23]], 'pie'); 
               
               // section 9 (cost) // row 25
-              costDict = swapItems(frequencyDict[24], 0, Object.keys(frequencyDict[24]).length-1);
-              costDict = swapItems(costDict, 3, 4);
-              costDict = swapItems(costDict, 2, 3);
+              // costDict = swapItems(frequencyDict[24], 0, Object.keys(frequencyDict[24]).length-1);
+              // costDict = swapItems(costDict, 3, 4);
+              // costDict = swapItems(costDict, 2, 3);
+			  let costDict = swapItems(frequencyDict[24], 2, 3);
               newSectionPlot(headers[24], numResponses, Object.keys(costDict), [Object.values(costDict)], [headers[24]], 'bar'); 
 
               // section 10 (comments) // row 26 ... need to display the text
-              newSectionText("Comments/Suggestions/Contact of people you may know", frequencyDict[25]);
+              newSectionText("Comments/Suggestions", sortDictForKeys(frequencyDict[25]));
               
               // section 11 (available for feedback) // row 27
-              newSectionPlot(headers[26], numResponses, Object.keys(frequencyDict[26]), [Object.values(frequencyDict[26])], [headers[26]], 'bar'); 
+			  let feedbackDict = sortDictForKeys(frequencyDict[26]);
+              newSectionPlot(headers[26], numResponses, Object.keys(feedbackDict), [Object.values(feedbackDict)], [headers[26]], 'bar'); 
 
             });
 
