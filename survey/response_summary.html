@@ -431,16 +431,22 @@
 
 
             // Function to swap first and last keys along with their values
-            function swapFirstAndLastKeysWithValues(dict) {
+            function swapItems(dict, firstIndex, secondIndex) {
               // Extract keys and values from the original dictionary
               let N = Object.keys(dict).length;
               let newDict = {};
-              newDict[Object.keys(dict)[N-1]] = Object.values(dict)[N-1];
-              for (let i=1; i < N-1; i++){
-                let key = Object.keys(dict)[i];
-                newDict[key] = dict[key];
+              for(let i=0; i<N; i++) {
+                if (i !== firstIndex && i !== secondIndex) {
+                  newDict[Object.keys(dict)[i]] = Object.values(dict)[i];
+                }
+                else {
+                  if (i === firstIndex) {
+                    newDict[Object.keys(dict)[secondIndex]] = Object.values(dict)[secondIndex];
+                  } else {
+                    newDict[Object.keys(dict)[firstIndex]] = Object.values(dict)[firstIndex];
+                  }
+                }
               }
-              newDict[Object.keys(dict)[0]] = Object.values(dict)[0];
               return newDict;
             }
 
@@ -490,7 +496,9 @@
               newSectionPlot(headers[23], numResponses, Object.keys(frequencyDict[23]), [Object.values(frequencyDict[23])], [headers[23]], 'pie'); 
               
               // section 9 (cost) // row 25
-              costDict = swapFirstAndLastKeysWithValues(frequencyDict[24]);
+              costDict = swapItems(frequencyDict[24], 0, Object.keys(frequencyDict[24]).length-1);
+              costDict = swapItems(costDict, 3, 4);
+              costDict = swapItems(costDict, 2, 3);
               newSectionPlot(headers[24], numResponses, Object.keys(costDict), [Object.values(costDict)], [headers[24]], 'bar'); 
 
               // section 10 (comments) // row 26 ... need to display the text
