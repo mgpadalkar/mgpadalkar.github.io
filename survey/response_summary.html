@@ -55,6 +55,11 @@
             .bottom-plot {
                 padding: 10px;
             }
+            .bottom-text {
+                font-size: 10px;
+                margin: 0 0 10px 0;
+                text-align: left;
+            }
         </style>
     </head>
     <body>
@@ -199,28 +204,59 @@
               new Chart(ctx, config);
             }
 
+            function makeFirstUpper(value) {
+                return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+            }
+
+            function validateValue(value) {
+              if (typeof value !== 'string') {
+                return [value];
+              }
+              if (value.includes('INR') || value.includes('Bothered') || value.slice(0, 3) === 'No,') {
+                return [value];
+              }
+              if (value === 'Na' || value === 'na' || value === 'N/a' || value === 'n/a' || value === 'N/A' || value === 'NA' || value === 'None' || value === 'none' || value === 'NONE') {
+                return [''];
+              }
+              
+              // for all other reasons
+              output = [];
+              value.split(', ').forEach(val => {
+                output.push(makeFirstUpper(val));
+              });
+              return output;
+            }
+
             // transform the data into list of column frequency dictionaries
             function columnValueFrequencies(data) {
               let numColumns = data[0].length;
               let frequencyList = [];
+              // initialize
               for (let col=0; col < numColumns; col++) {
                 frequencyList.push({});
               }
+              // populate the dictionary
               for (let row of data) {
                 for (let col = 0; col < numColumns; col++) {
-                  let val = row[col];
-                  if (val !== undefined && val !== null && val !== "")
-                  {
-                    if (col === 0) { // for timestamp column
-                        val = val.split(' ')[0];
+                  let valArr = validateValue(row[col]);
+                  valArr.forEach(val => {
+                    if (val !== undefined && val !== null && val !== "")
+                    {
+                      if (col === 0) { // for timestamp column
+                          val = val.split(' ')[0];
+                      }
+                      if (frequencyList[col][val]) {
+                        frequencyList[col][val] += 1;
+                      } else {
+                        frequencyList[col][val] = 1;
+                      }
                     }
-                    if (frequencyList[col][val]) {
-                      frequencyList[col][val] += 1;
-                    } else {
-                      frequencyList[col][val] = 1;
-                    }
-                  }
+                  });
                 }
+              }
+              // sort every dict for keys
+              for(let i = 0; i < frequencyList.length; i++) {
+                  frequencyList[i] = Object.fromEntries(Object.entries(frequencyList[i]).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)));
               }
               return frequencyList;
             }
@@ -283,6 +319,34 @@
             }
 
 
+            function newSectionText(sectionName, textDict) {
+              // make section container
+              const container = document.getElementById('main-container');
+              const sectionContainer = makeNewElement('div', 'section-container');
+              container.appendChild(sectionContainer);
+
+              // make top
+              const sectionTop = makeNewElement('div', 'container-top');
+              sectionContainer.appendChild(sectionTop);
+              const topTitle = makeNewElement('div', 'top-title');
+              let numResponses = Object.values(textDict).reduce((acc, curr) => acc+curr, 0);
+              topTitle.innerHTML = `${sectionName}<br>(${numResponses} responses)`;
+              sectionTop.appendChild(topTitle);
+
+              // make bottom
+              const sectionBottom = makeNewElement('div', 'bottom-text');
+              sectionContainer.appendChild(sectionBottom);
+              const ul = makeNewElement('ul');
+              sectionBottom.appendChild(ul);
+
+              Object.keys(textDict).forEach(key => {
+                const li = makeNewElement('li');
+                ul.appendChild(li);
+                li.textContent = `${key} (${textDict[key]})`;
+              });
+            }
+
+
             // plot section
             function newSectionPlot(sectionName, numResponses, xLabels, yValuesArr, datasetNameArr, chartType='pie') {
               // make section container
@@ -294,8 +358,11 @@
               const sectionTop = makeNewElement('div', 'container-top');
               sectionContainer.appendChild(sectionTop);
               const topTitle = makeNewElement('div', 'top-title');
-              // topTitle.textContent = `${sectionName} (${numResponses} responses)`;
-              topTitle.innerHTML = `${sectionName}<br>(${numResponses} responses)`;
+              if (numResponses >= 0) {
+                topTitle.innerHTML = `${sectionName}<br>(${numResponses} responses)`;
+              } else {
+                topTitle.innerHTML = sectionName;
+              }
               sectionTop.appendChild(topTitle);
 
               // make bottom
@@ -305,10 +372,10 @@
               // loop over various values to make the plot
               let numPlots = yValuesArr.length;
               yValuesArr.forEach((yValues, index) => {
-                  const plot = prepareCanvas(numPlots);
-                  sectionBottom.appendChild(plot);
-                  const ctx = plot.children[0].getContext('2d');
-                  plotChartCanvas(ctx, xLabels, yValues, datasetNameArr[index], chartType);
+                const plot = prepareCanvas(numPlots);
+                sectionBottom.appendChild(plot);
+                const ctx = plot.children[0].getContext('2d');
+                plotChartCanvas(ctx, xLabels, yValues, datasetNameArr[index], chartType);
               });
 
 
@@ -363,6 +430,21 @@
             }
 
 
+            // Function to swap first and last keys along with their values
+            function swapFirstAndLastKeysWithValues(dict) {
+              // Extract keys and values from the original dictionary
+              let N = Object.keys(dict).length;
+              let newDict = {};
+              newDict[Object.keys(dict)[N-1]] = Object.values(dict)[N-1];
+              for (let i=1; i < N-1; i++){
+                let key = Object.keys(dict)[i];
+                newDict[key] = dict[key];
+              }
+              newDict[Object.keys(dict)[0]] = Object.values(dict)[0];
+              return newDict;
+            }
+
+
             // Fetch data and create charts
             fetchData().then(tableData => {
               if (!tableData || tableData.length === 0) {
@@ -376,7 +458,7 @@
               // console.log('main', frequencyDict);
 
               // section 1
-              newSectionPlot(headers[0], numResponses, Object.keys(frequencyDict[0]), [Object.values(frequencyDict[0])], [headers[0]], 'line');
+              newSectionPlot(headers[0], numResponses, Object.keys(frequencyDict[0]), [Object.values(frequencyDict[0])], ["Date"], 'line');
 
               // section 2 (age)
               newSectionPlot(headers[1], numResponses, Object.keys(frequencyDict[1]), [Object.values(frequencyDict[1])], [headers[1]], 'bar');
@@ -395,7 +477,8 @@
               newSectionPlot(freqTitle, numResponses, freqKeys, freqList, uniqueHeads, 'pie');
 
               // section 5 (other reasons) ...list by frequency of occurance row 21
-              newSectionPlot(headers[20], numResponses, Object.keys(frequencyDict[20]), [Object.values(frequencyDict[20])], [headers[20]], 'pie');
+              // newSectionPlot(headers[20], numResponses, Object.keys(frequencyDict[20]), [Object.values(frequencyDict[20])], [headers[20]], 'pie');
+              newSectionText(headers[20], frequencyDict[20]);
 
               // section 6 (how do you overcome the problems) // row 22
               newSectionPlot(headers[21], numResponses, Object.keys(frequencyDict[21]), [Object.values(frequencyDict[21])], [headers[21]], 'pie'); // Need to split the combinations
@@ -407,9 +490,11 @@
               newSectionPlot(headers[23], numResponses, Object.keys(frequencyDict[23]), [Object.values(frequencyDict[23])], [headers[23]], 'pie'); 
               
               // section 9 (cost) // row 25
-              newSectionPlot(headers[24], numResponses, Object.keys(frequencyDict[24]), [Object.values(frequencyDict[24])], [headers[24]], 'bar'); 
+              costDict = swapFirstAndLastKeysWithValues(frequencyDict[24]);
+              newSectionPlot(headers[24], numResponses, Object.keys(costDict), [Object.values(costDict)], [headers[24]], 'bar'); 
 
               // section 10 (comments) // row 26 ... need to display the text
+              newSectionText("Comments/Suggestions/Contact of people you may know", frequencyDict[25]);
               
               // section 11 (available for feedback) // row 27
               newSectionPlot(headers[26], numResponses, Object.keys(frequencyDict[26]), [Object.values(frequencyDict[26])], [headers[26]], 'bar'); 
