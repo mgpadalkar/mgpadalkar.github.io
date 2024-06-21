@@ -47,18 +47,29 @@
                 margin-right: 5px;
             }
             .section-bottom { /* contains the plots */
-                height: 300px;
+                /* height: 300px; */
+                min-height: 300px;
                 display: flex;
                 flex-wrap: wrap;
                 justify-content: space-evenly;
+                overflow: auto; /* Ensure container can handle overflow */
             }
-            .bottom-plot {
+            .bottom-plot { /* canvas for each plot */
                 padding: 10px;
+                border: 1px solid #aaa;
+                border-radius: 8px;
+                box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+                min-height: 300px;
             }
             .bottom-text {
-                font-size: 10px;
+                font-size: 14px;
                 margin: 0 0 10px 0;
                 text-align: left;
+            }
+            .bottom-text li {
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 3px;
             }
         </style>
     </head>
@@ -251,9 +262,17 @@
               return output;
             }
 			
-			function sortDictForKeys(dict) {
-			  return Object.fromEntries(Object.entries(dict).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)));
-			}
+            function sortDictForKeys(dict) {
+              return Object.fromEntries(Object.entries(dict).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)));
+            }
+
+            function addToDictionary(dict, key, val=1) {
+              if (dict[key]) {
+                dict[key] += val;
+              } else {
+                dict[key] = val;
+              }
+            }
 
             // transform the data into list of column frequency dictionaries
             function columnValueFrequencies(data) {
@@ -266,26 +285,21 @@
               // populate the dictionary
               for (let row of data) {
                 for (let col = 0; col < numColumns; col++) {
-                  let valArr = validateValue(row[col]);
+                  // let valArr = validateValue(row[col]);
+                  let valArr = [row[col]];
                   valArr.forEach(val => {
                     if (val !== undefined && val !== null && val !== "")
                     {
                       if (col === 0) { // for timestamp column
-                          val = val.split(' ')[0];
+                        addToDictionary(frequencyList[col], val.split(' ')[0]);
                       }
-                      if (frequencyList[col][val]) {
-                        frequencyList[col][val] += 1;
-                      } else {
-                        frequencyList[col][val] = 1;
+                      else {
+                        addToDictionary(frequencyList[col], val);
                       }
                     }
                   });
                 }
               }
-              // // sort every dict for keys
-              // for(let i = 0; i < frequencyList.length; i++) {
-              //     frequencyList[i] = Object.fromEntries(Object.entries(frequencyList[i]).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)));
-              // }
               return frequencyList;
             }
 
@@ -367,10 +381,12 @@
               const ul = makeNewElement('ul');
               sectionBottom.appendChild(ul);
 
-              Object.keys(textDict).forEach(key => {
+              Object.keys(textDict).forEach((key, index) => {
+                let colorIndex = index % myBackgroundColor.length;
                 const li = makeNewElement('li');
                 ul.appendChild(li);
                 li.textContent = `${key} (${textDict[key]})`;
+                li.style.backgroundColor = `${myBackgroundColor[colorIndex]}`;
               });
             }
 
@@ -398,7 +414,7 @@
               sectionContainer.appendChild(sectionBottom);
 
               // loop over various values to make the plot
-              let numPlots = yValuesArr.length;
+              let numPlots = Math.min(3, yValuesArr.length);
               yValuesArr.forEach((yValues, index) => {
                 const plot = prepareCanvas(numPlots);
                 sectionBottom.appendChild(plot);
@@ -412,9 +428,9 @@
                 const topLegend = makeNewElement('div', 'top-legend');
                 sectionTop.appendChild(topLegend);
                 // Create the combined legend HTML from the shared data
-                var combinedLegendHTML = '<ul>';
+                let combinedLegendHTML = '<ul>';
                 xLabels.forEach(function(label, index) {
-                  var colorIndex = index % myBackgroundColor.length;
+                  let colorIndex = index % myBackgroundColor.length;
                   combinedLegendHTML += `
                     <li>
                       <span style="background-color: ${myBackgroundColor[colorIndex]}; border: 1px solid ${myBorderColor[colorIndex]}"></span>${label}
@@ -443,7 +459,7 @@
 
             function makeInsideOut(heads, dictionaryArr) {
               let headData = [];
-              uniqueHeads.forEach(val => {
+              heads.forEach(val => {
                 let outRow = []
                 dictionaryArr.forEach(dict => {
                   if (dict[val]) {
@@ -478,6 +494,54 @@
               return newDict;
             }
 
+            
+            function mergeFreqDictKeys(dict, keyListToMerge, newKey) {
+              let newFreq = {};
+              Object.keys(dict).forEach(key => {
+                if (keyListToMerge.includes(key)) {
+                  addToDictionary(newFreq, newKey, dict[key]);
+                } else {
+                  newFreq[key] = dict[key];
+                }
+              });
+              return newFreq;
+            }
+
+
+            function sortDictWithGivenKeys(dict, keyList) {
+              let newDict = {};
+              keyList.forEach(key => {
+                if (Object.keys(dict).includes(key)) {
+                  newDict[key] = dict[key];
+                } else {
+                  newDict[key] = '0';
+                }
+              });
+
+              Object.keys(dict).forEach(key => {
+                if (Object.keys(newDict).includes(key)) {
+                } else {
+                  newDict[key] = dict[key];
+                }
+              });
+              return newDict;
+            }
+
+
+            function splitDictKeys(dict, keyDelimiter) {
+              let newDict = {};
+              Object.keys(dict).forEach(key => {
+                key.split(keyDelimiter).forEach(subkey => {
+                  addToDictionary(newDict, subkey, dict[key]);
+                });
+              });
+              return newDict;
+            }
+
+            function reorderList(list, indices) {
+              return indices.map(index => list[index]);
+            }
+
 
             // Fetch data and create charts
             fetchData().then(tableData => {
@@ -492,31 +556,46 @@
               // console.log('main', frequencyDict);
 
               // section 1
-              newSectionPlot(headers[0], numResponses, Object.keys(frequencyDict[0]), [Object.values(frequencyDict[0])], ["Date"], 'line');
+              newSectionPlot('Activity timeline', numResponses, Object.keys(frequencyDict[0]), [Object.values(frequencyDict[0])], ["Date"], 'line');
 
               // section 2 (age)
-			  let ageDict = sortDictForKeys(frequencyDict[1]);
+              let ageOrder = ['Under 18', '18-25', '25-35', '35-45', '45-60', '60+'];
+              let ageDict = sortDictWithGivenKeys(frequencyDict[1], ageOrder);
               newSectionPlot(headers[1], numResponses, Object.keys(ageDict), [Object.values(ageDict)], [headers[1]], 'bar');
 
-              // section 3 (cols 3-11)
+              // section 3a (cols 3-11)
               let freqTitle = headers[2].substring(0, headers[2].indexOf('['));
-              let uniqueHeads = getUniqueHeads(frequencyDict.slice(2, 11));
+              // let uniqueHeads = getUniqueHeads(frequencyDict.slice(2, 11));
+              let uniqueHeads = ['Always', 'Often', 'Sometimes', 'Hardly ever', 'Never / Not applicable'];
               let freqKeys = headers.slice(2, 11).map(val => val.substring(val.indexOf('[') + 1, val.indexOf(']')));
               let freqList  = makeInsideOut(uniqueHeads, frequencyDict.slice(2, 11));
-              newSectionPlot(freqTitle, numResponses, freqKeys, freqList, uniqueHeads, 'pie');
+              newSectionPlot(freqTitle + '<br>[Frequency view]', numResponses, freqKeys, freqList, uniqueHeads, 'pie');
 
-              // section 4 (cols 12-20)
+              // section 3b (cols 3-11)
+              let displayOrder = [0, 5, 4, 7, 6, 3, 2, 1, 8];
+              // let displayOrder = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+              freqList = frequencyDict.slice(2, 11).map(val => Object.values(sortDictWithGivenKeys(val, uniqueHeads)));
+              newSectionPlot(freqTitle + '<br>[Problem view]', numResponses, uniqueHeads, reorderList(freqList, displayOrder), reorderList(freqKeys, displayOrder), 'bar');
+
+              // section 4a (cols 12-20)
               freqTitle = headers[11].substring(0, headers[11].indexOf('['));
-              uniqueHeads = getUniqueHeads(frequencyDict.slice(11, 20));
+              // uniqueHeads = getUniqueHeads(frequencyDict.slice(11, 20));
+              uniqueHeads = ['Exteremely troubled', 'Bothered, but can manage', 'Somewhat affected but not bothered', 'Don\'t even realise', 'Not affected / Not applicable'];
               freqList  = makeInsideOut(uniqueHeads, frequencyDict.slice(11, 20));
-              newSectionPlot(freqTitle, numResponses, freqKeys, freqList, uniqueHeads, 'pie');
+              newSectionPlot(freqTitle + '<br>[Frequency view]', numResponses, freqKeys, freqList, uniqueHeads, 'pie');
+              
+              // section 4a (cols 12-20)
+              freqList = frequencyDict.slice(11, 20).map(val => Object.values(sortDictWithGivenKeys(val, uniqueHeads)));
+              newSectionPlot(freqTitle + '<br>[Problem view]', numResponses, uniqueHeads, reorderList(freqList, displayOrder), reorderList(freqKeys, displayOrder), 'bar');
 
               // section 5 (other reasons) ...list by frequency of occurance row 21
-              // newSectionPlot(headers[20], numResponses, Object.keys(frequencyDict[20]), [Object.values(frequencyDict[20])], [headers[20]], 'pie');
-              newSectionText(headers[20], sortDictForKeys(frequencyDict[20]));
+              let reasonsDict = mergeFreqDictKeys(frequencyDict[20], ['N/A', 'NA', 'Na', 'na', 'No', 'no', 'None', 'none'], 'N/A');
+              reasonsDict = sortDictForKeys(reasonsDict);
+              newSectionText(headers[20], sortDictForKeys(reasonsDict));
 
               // section 6 (how do you overcome the problems) // row 22
-              newSectionPlot(headers[21], numResponses, Object.keys(frequencyDict[21]), [Object.values(frequencyDict[21])], [headers[21]], 'pie'); // Need to split the combinations
+              let currentSolutionsDict = splitDictKeys(frequencyDict[21], ', ');
+              newSectionPlot(headers[21], numResponses, Object.keys(currentSolutionsDict), [Object.values(currentSolutionsDict)], [headers[21]], 'pie'); // Need to split the combinations
               
               // section 7 (are you satisfied) // row 23
               newSectionPlot(headers[22], numResponses, Object.keys(frequencyDict[22]), [Object.values(frequencyDict[22])], [headers[22]], 'pie'); 
@@ -525,17 +604,18 @@
               newSectionPlot(headers[23], numResponses, Object.keys(frequencyDict[23]), [Object.values(frequencyDict[23])], [headers[23]], 'pie'); 
               
               // section 9 (cost) // row 25
-              // costDict = swapItems(frequencyDict[24], 0, Object.keys(frequencyDict[24]).length-1);
-              // costDict = swapItems(costDict, 3, 4);
-              // costDict = swapItems(costDict, 2, 3);
-			  let costDict = swapItems(frequencyDict[24], 2, 3);
+              let costList = ['Less than INR 1,000', 'INR 1,000 - 5,000', 'INR 5,000 - 10,000', 'INR 10,000 - 20,000', 'INR 20,000 - 35,000', 'INR 35,000 - 60,000', 'INR 60,000 - 1,00,000', 'INR 1,00,000 - 2,00,000', 'More than INR 2,00,000'];
+              // let costDict = swapItems(frequencyDict[24], 2, 3);
+              let costDict = sortDictWithGivenKeys(frequencyDict[24], costList);
               newSectionPlot(headers[24], numResponses, Object.keys(costDict), [Object.values(costDict)], [headers[24]], 'bar'); 
 
               // section 10 (comments) // row 26 ... need to display the text
-              newSectionText("Comments/Suggestions", sortDictForKeys(frequencyDict[25]));
+              let commentsDict = mergeFreqDictKeys(frequencyDict[25], ['N/A', 'NA', 'Na', 'na', 'No', 'no', 'None', 'none'], 'N/A');
+              commentsDict = sortDictForKeys(commentsDict);
+              newSectionText("Comments/Suggestions", commentsDict);
               
               // section 11 (available for feedback) // row 27
-			  let feedbackDict = sortDictForKeys(frequencyDict[26]);
+              let feedbackDict = sortDictForKeys(frequencyDict[26]);
               newSectionPlot(headers[26], numResponses, Object.keys(feedbackDict), [Object.values(feedbackDict)], [headers[26]], 'bar'); 
 
             });
