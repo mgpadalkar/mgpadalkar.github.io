@@ -74,7 +74,14 @@
         </style>
     </head>
     <body>
-        <div id="main-container" width="400" height="400"></div>
+        <div id="main-container" width="400" height="400">
+          <h2 style="text-align: center;">Summary: Are you troubled by strong lights?</h2>
+          <div style="text-align: center;">Best viewed on:
+              • a Desktop/Laptop browser or, • "Desktop site" enabled a mobile browser
+          </div>
+          <div><br></div>
+        </div>
+
         <script>
 
             // Your Google Spreadsheet ID
@@ -169,7 +176,7 @@
             }
 
             // Function to plot a bar chart
-            function plotChartCanvas(ctx, xLabels, yValues, chartTitle, chartType='bar') {
+            function plotChartCanvas(ctx, xLabels, yValues, chartTitle, chartType='bar', showLegend=false) {
               // create the config
               config = {
                 type: chartType,
@@ -188,7 +195,7 @@
                   maintainAspectRatio: false,
                   plugins: {
                     legend: {
-                      display: false,
+                      display: showLegend,
                       position: 'top',
                       labels: {
                         boxWidth: 10,
@@ -391,6 +398,38 @@
             }
 
 
+            function newSectionUncommonPlots(sectionName, numResponses, xLabelsArr, yValuesArr, datasetNameArr, chartTypeArr) {
+              // make section container
+              const container = document.getElementById('main-container');
+              const sectionContainer = makeNewElement('div', 'section-container');
+              container.appendChild(sectionContainer);
+
+              // make top
+              const sectionTop = makeNewElement('div', 'container-top');
+              sectionContainer.appendChild(sectionTop);
+              const topTitle = makeNewElement('div', 'top-title');
+              if (numResponses >= 0) {
+                topTitle.innerHTML = `${sectionName}<br>(${numResponses} responses)`;
+              } else {
+                topTitle.innerHTML = sectionName;
+              }
+              sectionTop.appendChild(topTitle);
+
+              // make bottom
+              const sectionBottom = makeNewElement('div', 'section-bottom');
+              sectionContainer.appendChild(sectionBottom);
+
+              // loop over various values to make the plot
+              let numPlots = Math.min(3, yValuesArr.length);
+              yValuesArr.forEach((yValues, index) => {
+                const plot = prepareCanvas(numPlots);
+                sectionBottom.appendChild(plot);
+                const ctx = plot.children[0].getContext('2d');
+                plotChartCanvas(ctx, xLabelsArr[index], yValues, datasetNameArr[index], chartTypeArr[index]);
+              });
+            }
+
+
             // plot section
             function newSectionPlot(sectionName, numResponses, xLabels, yValuesArr, datasetNameArr, chartType='pie') {
               // make section container
@@ -543,6 +582,19 @@
             }
 
 
+            function getTotalForEach(Arr, normalize=true) {
+              let outArr = [];
+              Arr.forEach(row => {
+                outArr.push(row.reduce((acc, curr) => acc + curr, 0));
+              });
+              if (normalize) {
+                let total = outArr.reduce((acc, curr) => acc + curr, 0);
+                outArr = outArr.map(val => parseFloat(((val/total)*100).toFixed(1)));
+              }
+              return outArr;
+            }
+
+
             // Fetch data and create charts
             fetchData().then(tableData => {
               if (!tableData || tableData.length === 0) {
@@ -556,37 +608,47 @@
               // console.log('main', frequencyDict);
 
               // section 1
-              newSectionPlot('Activity timeline', numResponses, Object.keys(frequencyDict[0]), [Object.values(frequencyDict[0])], ["Date"], 'line');
+              newSectionPlot('Survey response timeline', numResponses, Object.keys(frequencyDict[0]), [Object.values(frequencyDict[0])], ["Date"], 'line');
 
               // section 2 (age)
               let ageOrder = ['Under 18', '18-25', '25-35', '35-45', '45-60', '60+'];
               let ageDict = sortDictWithGivenKeys(frequencyDict[1], ageOrder);
-              newSectionPlot(headers[1], numResponses, Object.keys(ageDict), [Object.values(ageDict)], [headers[1]], 'bar');
+              newSectionPlot(headers[1], numResponses, Object.keys(ageDict), [Object.values(ageDict)], ['Age Range'], 'bar');
+
+              // section 3-4 summary
+              let uniqueHeadsTime = ['Always', 'Often', 'Sometimes', 'Hardly ever', 'Never / Not applicable'];
+              let uniqueHeadsEffect = ['Exteremely troubled', 'Bothered, but can manage', 'Somewhat affected but not bothered', 'Don\'t even realise', 'Not affected / Not applicable'];
+              let freqListTime = makeInsideOut(uniqueHeadsTime, frequencyDict.slice(2, 11));
+              let freqListEffect = makeInsideOut(uniqueHeadsEffect, frequencyDict.slice(11, 20));
+              let freqSummaryTime = getTotalForEach(freqListTime); 
+              let freqSummaryEffect = getTotalForEach(freqListEffect);
+              newSectionUncommonPlots("Summary<br>How often and badly are people troubled by some or the other light related problem?", numResponses, [uniqueHeadsTime, uniqueHeadsEffect], [freqSummaryTime, freqSummaryEffect], ['How many times? (%)', 'How badly? (%)'], ['bar', 'bar']);
+
 
               // section 3a (cols 3-11)
               let freqTitle = headers[2].substring(0, headers[2].indexOf('['));
               // let uniqueHeads = getUniqueHeads(frequencyDict.slice(2, 11));
-              let uniqueHeads = ['Always', 'Often', 'Sometimes', 'Hardly ever', 'Never / Not applicable'];
+              let uniqueHeads = uniqueHeadsTime;
               let freqKeys = headers.slice(2, 11).map(val => val.substring(val.indexOf('[') + 1, val.indexOf(']')));
-              let freqList  = makeInsideOut(uniqueHeads, frequencyDict.slice(2, 11));
-              newSectionPlot(freqTitle + '<br>[Frequency view]', numResponses, freqKeys, freqList, uniqueHeads, 'pie');
+              let freqList = freqListTime;
+              newSectionPlot('Details of how often various problems are experienced', numResponses, freqKeys, freqList, uniqueHeads, 'pie');
 
               // section 3b (cols 3-11)
               let displayOrder = [0, 5, 4, 7, 6, 3, 2, 1, 8];
               // let displayOrder = [0, 1, 2, 3, 4, 5, 6, 7, 8];
               freqList = frequencyDict.slice(2, 11).map(val => Object.values(sortDictWithGivenKeys(val, uniqueHeads)));
-              newSectionPlot(freqTitle + '<br>[Problem view]', numResponses, uniqueHeads, reorderList(freqList, displayOrder), reorderList(freqKeys, displayOrder), 'bar');
+              newSectionPlot('Details of how often various problems are experienced [Problem view]', numResponses, uniqueHeads, reorderList(freqList, displayOrder), reorderList(freqKeys, displayOrder), 'bar');
 
               // section 4a (cols 12-20)
               freqTitle = headers[11].substring(0, headers[11].indexOf('['));
               // uniqueHeads = getUniqueHeads(frequencyDict.slice(11, 20));
-              uniqueHeads = ['Exteremely troubled', 'Bothered, but can manage', 'Somewhat affected but not bothered', 'Don\'t even realise', 'Not affected / Not applicable'];
-              freqList  = makeInsideOut(uniqueHeads, frequencyDict.slice(11, 20));
-              newSectionPlot(freqTitle + '<br>[Frequency view]', numResponses, freqKeys, freqList, uniqueHeads, 'pie');
+              uniqueHeads = uniqueHeadsEffect;
+              freqList  = makeInsideOut(uniqueHeadsEffect, frequencyDict.slice(11, 20));
+              newSectionPlot('Details of how badly various problems are experienced', numResponses, freqKeys, freqList, uniqueHeads, 'pie');
               
-              // section 4a (cols 12-20)
+              // section 4b (cols 12-20)
               freqList = frequencyDict.slice(11, 20).map(val => Object.values(sortDictWithGivenKeys(val, uniqueHeads)));
-              newSectionPlot(freqTitle + '<br>[Problem view]', numResponses, uniqueHeads, reorderList(freqList, displayOrder), reorderList(freqKeys, displayOrder), 'bar');
+              newSectionPlot('Details of how badly various problems are experienced [Problem view]', numResponses, uniqueHeads, reorderList(freqList, displayOrder), reorderList(freqKeys, displayOrder), 'bar');
 
               // section 5 (other reasons) ...list by frequency of occurance row 21
               let reasonsDict = mergeFreqDictKeys(frequencyDict[20], ['N/A', 'NA', 'Na', 'na', 'No', 'no', 'None', 'none'], 'N/A');
