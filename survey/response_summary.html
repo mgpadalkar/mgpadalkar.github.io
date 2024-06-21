@@ -553,7 +553,7 @@
                 if (Object.keys(dict).includes(key)) {
                   newDict[key] = dict[key];
                 } else {
-                  newDict[key] = '0';
+                  newDict[key] = 0;
                 }
               });
 
@@ -657,7 +657,7 @@
 
               // section 6 (how do you overcome the problems) // row 22
               let currentSolutionsDict = splitDictKeys(frequencyDict[21], ', ');
-              newSectionPlot(headers[21], numResponses, Object.keys(currentSolutionsDict), [Object.values(currentSolutionsDict)], [headers[21]], 'pie'); // Need to split the combinations
+              newSectionPlot(headers[21] + '<br> [Multiple choices]', numResponses, Object.keys(currentSolutionsDict), [Object.values(currentSolutionsDict)], [headers[21]], 'pie'); // Need to split the combinations
               
               // section 7 (are you satisfied) // row 23
               newSectionPlot(headers[22], numResponses, Object.keys(frequencyDict[22]), [Object.values(frequencyDict[22])], [headers[22]], 'pie'); 
