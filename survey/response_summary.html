@@ -594,6 +594,12 @@
               return outArr;
             }
 
+            function removeKey(dict, key) {
+              if (key in dict) {
+                delete dict[key];
+              }
+            }
+
 
             // Fetch data and create charts
             fetchData().then(tableData => {
@@ -651,7 +657,8 @@
               newSectionPlot('Details of how badly various problems are experienced [Problem view]', numResponses, uniqueHeads, reorderList(freqList, displayOrder), reorderList(freqKeys, displayOrder), 'bar');
 
               // section 5 (other reasons) ...list by frequency of occurance row 21
-              let reasonsDict = mergeFreqDictKeys(frequencyDict[20], ['N/A', 'NA', 'Na', 'na', 'No', 'no', 'None', 'none'], 'N/A');
+              let reasonsDict = mergeFreqDictKeys(frequencyDict[20], ['N/A', 'NA', 'Na', 'na', 'No', 'no', 'None', 'none', 'x', 'X', '-', '--'], 'N/A');
+              removeKey(reasonsDict, 'N/A');
               reasonsDict = sortDictForKeys(reasonsDict);
               newSectionText(headers[20], sortDictForKeys(reasonsDict));
 
@@ -672,7 +679,8 @@
               newSectionPlot(headers[24], numResponses, Object.keys(costDict), [Object.values(costDict)], [headers[24]], 'bar'); 
 
               // section 10 (comments) // row 26 ... need to display the text
-              let commentsDict = mergeFreqDictKeys(frequencyDict[25], ['N/A', 'NA', 'Na', 'na', 'No', 'no', 'None', 'none'], 'N/A');
+              let commentsDict = mergeFreqDictKeys(frequencyDict[25], ['N/A', 'NA', 'Na', 'na', 'No', 'no', 'None', 'none', 'x', 'X', '-', '--'], 'N/A');
+              removeKey(commentsDict, 'N/A');
               commentsDict = sortDictForKeys(commentsDict);
               newSectionText("Comments/Suggestions", commentsDict);
               
