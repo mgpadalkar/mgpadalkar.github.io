@@ -67,6 +67,7 @@
             </td>
           </tr>
         </tbody></table>
+
         <table style="width:100%;border:0px;border-spacing:0px;border-collapse:separate;margin-right:auto;margin-left:auto;"><tbody>
             <tr>
             <td style="padding:20px;width:100%;vertical-align:middle">
@@ -79,8 +80,48 @@
           </tr>
         </tbody></table>
         <table style="width:100%;border:0px;border-spacing:0px;border-collapse:separate;margin-right:auto;margin-left:auto;"><tbody>
-		
-		<tr onmouseout="ANIDIS_2022_teaser_stop()" onmouseover="ANIDIS_2022_teaser_start()">
+
+        
+               <!-- --------------------------- PR Journal 2023- Keypoints estimation --------------------------- -->
+       	<tr onmouseout="pr2023_teaser_stop()" onmouseover="pr2023_teaser_start()">
+              <td style="padding:20px;width:25%;vertical-align:middle">
+                <div class="one">
+                  <div class="two" id='pr2023_teaser'><video  width=160 muted autoplay loop>
+                <source src="./files/papers/pr2023_overview.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                        </video></div>
+                <img src='./files/papers/pr2023_overview.png' width="160" alt="Preview coming soon">
+                  </div>
+        
+          <script type="text/javascript">
+                  function pr2023_teaser_start() {
+                    document.getElementById('pr2023_teaser').style.opacity = "1";
+                  }
+        
+                  function pr2023_teaser_stop() {
+                    document.getElementById('pr2023_teaser').style.opacity = "0";
+                  }
+                  pr2023_teaser_stop()
+                </script>
+              </td>
+              <td style="padding:20px;width:75%;vertical-align:middle">
+                <a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4349267" target="_blank">
+                  <papertitle><font color="black">CDHN: Cross-Domain Hallucination Network For 3D Key-points Estimation”, Pattern Recognition</font></papertitle>
+                </a>
+                <br>
+                <a href="https://www.iit.it/people/mohammad-zohaib">Mohammad Zohaib</a>,
+                <strong>Milind G. Padalkar</strong>,
+                <a href="https://www.iit.it/people/pietro-morerio">Pietro Morerio</a>,
+                <a href="https://www.iit.it/people/matteo-taiana">Matteo Taiana</a>,
+                <a href="https://www.iit.it/people/alessio-delbue">Alessio Del Bue</a>  <br>
+                <em>Pattern Recognition, Accepted [Nov. 2024]</em><br>
+                <!-- [<font color="red"><strong>Oral presentation</strong></font>] -->
+                <a href='https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4349267' target="_blank">PDF</a>
+                <p> The paper presents a teacher-student network that hallucinates 3D features directly from RGB images to improve the keypoints localization.
+                  </p>
+              </td>
+        </tr>
+	<tr onmouseout="ANIDIS_2022_teaser_stop()" onmouseover="ANIDIS_2022_teaser_start()">
             <td style="padding:20px;width:25%;vertical-align:middle">
 			  <div class="one">
 			    <div class="two" id='ANIDIS_2022_teaser'>
