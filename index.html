@@ -75,7 +75,45 @@
         </tbody></table>
         <table style="width:100%;border:0px;border-spacing:0px;border-collapse:separate;margin-right:auto;margin-left:auto;"><tbody>
 
+        <!-- --------------------------- ICPR2026- SplatFill --------------------------- -->
+       	<tr onmouseout="icpr2026_teaser_stop()" onmouseover="icpr2026_teaser_start()">
+              <td style="padding:20px;width:25%;vertical-align:middle">
+                <div class="one">
+                  <div class="two" id='icpr2026_teaser'><video  width=160 muted autoplay loop>
+                <source src="./files/papers/icpr2026_overview.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                        </video></div>
+                <img src='./files/papers/icpr2026_overview.png' width="160" alt="Preview coming soon">
+                  </div>
         
+          <script type="text/javascript">
+                  function icpr2026_teaser_start() {
+                    document.getElementById('icpr2026_teaser').style.opacity = "1";
+                  }
+        
+                  function icpr2026_teaser_stop() {
+                    document.getElementById('icpr2026_teaser').style.opacity = "0";
+                  }
+                  icpr2026_teaser_stop()
+                </script>
+              </td>
+              <td style="padding:20px;width:75%;vertical-align:middle">
+                <a href="https://arxiv.org/abs/2509.07809" target="_blank">
+                  <papertitle>SplatFill: 3D Scene Inpainting via Depth-Guided Gaussian Splatting</papertitle>
+                </a>
+                <br>
+                <a href="https://www.iit.it/people/mahtab-dahaghin">Mahtab Dahaghin</a>,
+                <strong>Milind G. Padalkar</strong>,
+                <a href="https://www.iit.it/people/matteo-toso">Matteo Toso</a>,
+                <a href="https://www.iit.it/people/alessio-delbue">Alessio Del Bue</a>  <br>
+                <em>28th International Conference on Pattern Recognition</em>, 2026<br>
+                <!-- [<font color="red"><strong>Oral presentation</strong></font>] -->
+                <a href='https://arxiv.org/pdf/2509.07809' target="_blank">PDF</a>
+                <p> The paper presents a depth-guided 3D Gaussian Splatting method that selectively refines inconsistent regions to improve geometric consistency and object coherence in 3D scene inpainting.
+                  </p>
+              </td>
+        </tr>
+		
                <!-- --------------------------- PR Journal 2023- Keypoints estimation --------------------------- -->
        	<tr onmouseout="pr2023_teaser_stop()" onmouseover="pr2023_teaser_start()">
               <td style="padding:20px;width:25%;vertical-align:middle">
